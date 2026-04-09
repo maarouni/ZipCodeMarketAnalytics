@@ -108,7 +108,7 @@ else:
     monthly_rent = st.sidebar.number_input("Expected Monthly Rent ($)", min_value=0, value=2000, step=100)
 
 monthly_expenses = st.sidebar.number_input(
-    "Monthly Expenses ($: property tax + insurance + miscellaneous)",
+    "Operating Expenses ($: property tax + insurance + miscellaneous)",
     min_value=0, value=800, step=50,
     help="Property tax + insurance + maintenance + HOA"
 )
@@ -293,7 +293,7 @@ with tab2:
 
     st.markdown("""
 ### 📝 Interpretation
-- **Operating Expenses** — property tax, insurance, maintenance, HOA
+- **Operating Expenses** — property tax, insurance, maintenance, miscellaneous
 - **Mortgage** — annual principal + interest payments
 - **Cash Flow** — annual proceeds after all costs
 
