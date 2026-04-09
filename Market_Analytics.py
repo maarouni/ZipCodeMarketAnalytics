@@ -6,7 +6,7 @@ from sklearn.linear_model import LinearRegression
 import numpy as np
 import requests
 
-st.set_page_config(page_title="Market Analytics", layout="wide")
+st.set_page_config(page_title="Market Analytics", layout="wide", initial_sidebar_state="expanded")
 
 st.markdown("""
 <style>
@@ -20,6 +20,7 @@ st.markdown("""
     font-weight: 600 !important;
 }
 [data-testid="stSidebarNav"] li:first-child a {
+    letter-spacing: 0.03em !important;
     font-size: 19px !important;
     font-weight: 700 !important;
     color: white !important;
@@ -33,6 +34,33 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# ---------------------------------------------------------
+# 🔐 PASSWORD GATE
+# ---------------------------------------------------------
+APP_PASSWORD = st.secrets.get("APP_PASSWORD", "")
+
+if "authenticated" not in st.session_state:
+    st.session_state.authenticated = False
+if "pw_error" not in st.session_state:
+    st.session_state.pw_error = False
+
+if not st.session_state.authenticated:
+    st.title("🏡 RealEstate-Analytics.ai")
+    st.markdown("#### Market Analytics & Deal Analyzer")
+    if st.session_state.pw_error:
+        st.error("❌ Incorrect password. Please try again.")
+        st.session_state.pw_error = False
+    password = st.text_input("🔒 Please enter access password", type="password")
+    if st.button("Unlock"):
+        if password == APP_PASSWORD:
+            st.session_state.authenticated = True
+            st.rerun()
+        else:
+            st.session_state.pw_error = True
+            st.rerun()
+    st.stop()
+
+# ---------------------------------------------------------
 ZILLOW_URL = "https://files.zillowstatic.com/research/public_csvs/zhvi/Zip_zhvi_uc_sfrcondo_tier_0.33_0.67_sm_sa_month.csv"
 CACHE_FILE = Path("raw_data/zillow_full_cache.csv")
 
