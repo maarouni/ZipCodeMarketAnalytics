@@ -17,28 +17,17 @@ from pdf_single import generate_pdf, generate_ai_verdict
 from pdf_single_agent import generate_pdf as generate_agent_pdf
 
 st.set_page_config(page_title="Single Property Analyzer", layout="wide")
-st.title("🏡 Single Property Analyzer")
+st.title("🏠 Single Property Analyzer")
 st.markdown("Analyze the investment potential of a specific property.")
 
+# ---------------------------------------------------------
+# Load Zillow Data
+# ---------------------------------------------------------
 ZHVI_FILE = Path("raw_data/zillow_full_cache.csv")
 ZORI_FILE = Path("raw_data/zori_cache.csv")
-ZHVI_URL = "https://files.zillowstatic.com/research/public_csvs/zhvi/Zip_zhvi_uc_sfrcondo_tier_0.33_0.67_sm_sa_month.csv"
-ZORI_URL = "https://files.zillowstatic.com/research/public_csvs/zori/Zip_zori_uc_sfrcondomfr_sm_month.csv?t=1770952790"
-import requests
 
-@st.cache_data(show_spinner="Loading market data — first load takes ~10 seconds...")
+@st.cache_data(show_spinner=False)
 def load_zillow():
-    ZHVI_FILE.parent.mkdir(parents=True, exist_ok=True)
-    if not ZHVI_FILE.exists():
-        r = requests.get(ZHVI_URL, stream=True)
-        with open(ZHVI_FILE, "wb") as f:
-            for chunk in r.iter_content(chunk_size=8192):
-                f.write(chunk)
-    if not ZORI_FILE.exists():
-        r = requests.get(ZORI_URL, stream=True)
-        with open(ZORI_FILE, "wb") as f:
-            for chunk in r.iter_content(chunk_size=8192):
-                f.write(chunk)
     zhvi = pd.read_csv(ZHVI_FILE, dtype={"RegionName": str})
     zori = pd.read_csv(ZORI_FILE, dtype={"RegionName": str})
     return zhvi, zori
@@ -67,6 +56,9 @@ def get_market_data(zhvi_df, zori_df, zipcode):
 
 zhvi_df, zori_df = load_zillow()
 
+# ---------------------------------------------------------
+# Sidebar
+# ---------------------------------------------------------
 st.sidebar.header("🏡 Property Information")
 street_address = st.sidebar.text_input("Street Address *", placeholder="123 Oak St, Danville CA 94526")
 
@@ -98,17 +90,16 @@ if zhvi_price and purchase_price != zhvi_price:
     st.sidebar.caption(f"This price is **{abs(diff_pct):.1f}% {direction}** the {mkt_city} median of ${zhvi_price:,}")
 
 if zori_rent:
-    zori_adjusted = int(zori_rent * 1.3)
-    rent_min = int(zori_adjusted * 0.70)
-    rent_max = int(zori_adjusted * 1.30)
+    rent_min = int(zori_rent * 0.80)
+    rent_max = int(zori_rent * 1.20)
     st.sidebar.markdown("**Monthly Rent ($)**")
-    st.sidebar.caption(f"Zillow ZORI: ${zori_rent:,}/mo × 1.3 = ${zori_adjusted:,}/mo (Bay Area adjusted) — ±30% from adjusted default")
-    monthly_rent = st.sidebar.slider("Drag to adjust rent", min_value=rent_min, max_value=rent_max, value=zori_adjusted, step=50)
+    st.sidebar.caption(f"Zillow ZORI estimate: ${zori_rent:,}/mo — adjust ±20% for your property")
+    monthly_rent = st.sidebar.slider("Drag to adjust rent", min_value=rent_min, max_value=rent_max, value=zori_rent, step=50)
 else:
     monthly_rent = st.sidebar.number_input("Expected Monthly Rent ($)", min_value=0, value=2000, step=100)
 
 monthly_expenses = st.sidebar.number_input(
-    "Operating Expenses ($: property tax + insurance + miscellaneous)",
+    "Monthly Expenses ($)",
     min_value=0, value=800, step=50,
     help="Property tax + insurance + maintenance + HOA"
 )
@@ -122,6 +113,9 @@ appreciation_rate = st.sidebar.slider("Annual Appreciation Rate (%)", 0, 10, 3)
 rent_growth_rate = st.sidebar.slider("Annual Rent Growth Rate (%)", 0, 10, 3)
 time_horizon = st.sidebar.slider("Investment Time Horizon (Years)", 1, 30, 10)
 
+# ---------------------------------------------------------
+# Run Calculations
+# ---------------------------------------------------------
 metrics = calculate_metrics(
     purchase_price, monthly_rent, down_payment_pct,
     mortgage_rate, mortgage_term,
@@ -147,6 +141,9 @@ property_data = {
 improvements_list = []
 summary_text, grade = generate_ai_verdict(metrics)
 
+# ---------------------------------------------------------
+# Tabs
+# ---------------------------------------------------------
 tab1, tab2, tab3 = st.tabs(["Deal Analyzer", "Insights", "Agent Report"])
 
 # ===================================================================
@@ -166,7 +163,7 @@ with tab1:
 
     st.subheader("📈 Multi-Year Cash Flow Projection")
     years = list(range(1, time_horizon + 1))
-    fig, ax = plt.subplots(figsize=(10, 4))
+    fig, ax = plt.subplots()
     ax.plot(years, metrics["Multi-Year Cash Flow"], marker='o', label="Multi-Year Cash Flow ($)")
     ax.plot(years, metrics["Annual Rents $ (by year)"], marker='s', linestyle='--', label="Projected Rent ($)")
     ax.set_xlabel("Year")
@@ -179,31 +176,12 @@ with tab1:
     lines2, labels2 = ax2.get_legend_handles_labels()
     ax.legend(lines + lines2, labels + labels2, loc="upper left")
     ax.set_title("Multi-Year Projected Cash Flow & ROI")
-    col_chart, col_pad = st.columns([3, 1])
-    with col_chart:
-        st.pyplot(fig, use_container_width=True)
+    st.pyplot(fig)
 
     st.markdown("---")
-
-    try:
-        with open("Investment_Metrics_User_Guide.pdf", "rb") as f:
-            st.download_button(
-                label="📘 Download User Manual (PDF)",
-                data=f,
-                file_name="Investment_Metrics_User_Guide.pdf",
-                mime="application/pdf",
-                key="user_manual"
-            )
-    except FileNotFoundError:
-        st.warning("📄 User Manual PDF not found in project folder.")
-
     if pdf_bytes:
-        st.download_button(
-            label="📄 Download PDF Report",
-            data=pdf_bytes,
-            file_name=f"deal_analysis_{zip_from_address or 'report'}.pdf",
-            mime="application/pdf"
-        )
+        st.download_button("📄 Download PDF Report", data=pdf_bytes,
+            file_name=f"deal_analysis_{zip_from_address or 'report'}.pdf", mime="application/pdf")
 
     st.markdown("### 📨 Email This Report")
     recipient_email = st.text_input("Enter email address to send the report", placeholder="you@example.com")
@@ -278,7 +256,7 @@ with tab2:
     values = [max(annual_expenses, 0), max(annual_mortgage, 0), max(annual_cash_flow, 0)]
     value_labels = [f"${annual_expenses:,.0f}", f"${annual_mortgage:,.0f}", f"${annual_cash_flow:,.0f}"]
 
-    fig_exp, ax_exp = plt.subplots(figsize=(5, 5))
+    fig_exp, ax_exp = plt.subplots(figsize=(6, 6))
     wedges, texts, autotexts = ax_exp.pie(values, labels=None, autopct="%1.1f%%", pctdistance=0.75, startangle=90)
     for i, w in enumerate(wedges):
         ang = (w.theta2 + w.theta1) / 2
@@ -287,13 +265,11 @@ with tab2:
         ax_exp.text(x, y, f"{value_labels[i]}\n{labels[i]}", ha="center", va="center", fontsize=11, fontweight="bold")
     ax_exp.legend(wedges, labels, loc="lower center", bbox_to_anchor=(0.5, -0.1), frameon=False, ncol=3)
     ax_exp.axis("equal")
-    col_chart, col_pad = st.columns([2, 2])
-    with col_chart:
-        st.pyplot(fig_exp, use_container_width=True)
+    st.pyplot(fig_exp)
 
     st.markdown("""
 ### 📝 Interpretation
-- **Operating Expenses** — property tax, insurance, maintenance, miscellaneous
+- **Operating Expenses** — property tax, insurance, maintenance, HOA
 - **Mortgage** — annual principal + interest payments
 - **Cash Flow** — annual proceeds after all costs
 
@@ -315,14 +291,12 @@ _All slices shown as % of **annual** income — aligned with investor metrics._
     if sum(values_cap) == 0:
         st.warning("⚠️ Net Cap Rate cannot be computed — values are zero.")
     else:
-        fig_cap, ax_cap = plt.subplots(figsize=(5, 5))
+        fig_cap, ax_cap = plt.subplots(figsize=(6, 6))
         wedges, _ = ax_cap.pie(values_cap, wedgeprops=dict(width=0.35), startangle=90)
         ax_cap.text(0, 0.05, f"{net_cap_rate:.2f}%", ha="center", va="center", fontsize=20, fontweight="bold")
         ax_cap.text(0, -0.12, "earned from your property", ha="center", va="center", fontsize=11, color="gray")
         ax_cap.axis("equal")
-        col_chart, col_pad = st.columns([2, 2])
-        with col_chart:
-            st.pyplot(fig_cap, use_container_width=True)
+        st.pyplot(fig_cap)
         st.markdown(f"""
 📘 **Meaning:** **{net_cap_rate:.2f}%** of your property's value actually comes back
 to you as *yearly income after expenses and reserves.*
