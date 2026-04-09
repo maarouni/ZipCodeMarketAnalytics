@@ -26,9 +26,23 @@ st.markdown("Compare two investment properties side-by-side to optimize ROI, cas
 # ---------------------------------------------------------
 ZHVI_FILE = Path("raw_data/zillow_full_cache.csv")
 ZORI_FILE = Path("raw_data/zori_cache.csv")
+ZHVI_URL = "https://files.zillowstatic.com/research/public_csvs/zhvi/Zip_zhvi_uc_sfrcondo_tier_0.33_0.67_sm_sa_month.csv"
+ZORI_URL = "https://files.zillowstatic.com/research/public_csvs/zori/Zip_zori_uc_sfrcondomfr_sm_month.csv?t=1770952790"
+import requests
 
-@st.cache_data(show_spinner=False)
+@st.cache_data(show_spinner="Loading market data — first load takes ~10 seconds...")
 def load_zillow():
+    ZHVI_FILE.parent.mkdir(parents=True, exist_ok=True)
+    if not ZHVI_FILE.exists():
+        r = requests.get(ZHVI_URL, stream=True)
+        with open(ZHVI_FILE, "wb") as f:
+            for chunk in r.iter_content(chunk_size=8192):
+                f.write(chunk)
+    if not ZORI_FILE.exists():
+        r = requests.get(ZORI_URL, stream=True)
+        with open(ZORI_FILE, "wb") as f:
+            for chunk in r.iter_content(chunk_size=8192):
+                f.write(chunk)
     zhvi = pd.read_csv(ZHVI_FILE, dtype={"RegionName": str})
     zori = pd.read_csv(ZORI_FILE, dtype={"RegionName": str})
     return zhvi, zori
