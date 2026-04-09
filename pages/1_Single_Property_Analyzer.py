@@ -346,6 +346,9 @@ with tab3:
     st.markdown("Generate a **client-ready PDF** with your name, brokerage, and personalized notes.")
 
     st.markdown("### 👤 Agent Information")
+    logo_file = st.file_uploader("📎 Upload Brokerage Logo (optional — PNG or JPG)", type=["png","jpg","jpeg"])
+    if logo_file:
+        st.image(logo_file, width=180)
     agent_name = st.text_input("Agent Name")
     brokerage_name = st.text_input("Brokerage Name")
     client_name = st.text_input("Client Name")
@@ -359,7 +362,8 @@ with tab3:
         brokerage_name=brokerage_name or "Your Brokerage",
         client_name=client_name or "Client",
         agent_notes=agent_notes or "",
-        improvements_list=improvements_list
+        improvements_list=improvements_list,
+        logo_bytes=logo_file if logo_file else None
     )
 
     if agent_pdf_bytes:

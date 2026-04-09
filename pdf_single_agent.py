@@ -230,12 +230,33 @@ def generate_pdf(
     client_name: str,
     agent_notes: str = "",
     improvements_list=None,
+    logo_bytes=None,
 ):
     print("🔥 USING pdf_single_agent.py (dynamic, icon-free version)")
     buffer = BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=letter)
     elements = []
     styles = getSampleStyleSheet()
+
+    # Logo if provided
+    from reportlab.platypus import Spacer
+    if logo_bytes:
+        try:
+            from reportlab.platypus import Image as RLImage
+            from PIL import Image as PILImage
+            logo_bytes.seek(0)
+            pil_img = PILImage.open(logo_bytes)
+            w, h = pil_img.size
+            max_w, max_h = 180, 60
+            ratio = min(max_w/w, max_h/h)
+            logo_w, logo_h = int(w*ratio), int(h*ratio)
+            logo_bytes.seek(0)
+            logo_img = RLImage(logo_bytes, width=logo_w, height=logo_h)
+            logo_img.hAlign = "CENTER"
+            elements.append(logo_img)
+            elements.append(Spacer(1, 8))
+        except Exception as e:
+            pass
 
     # Styles
     title_style = ParagraphStyle(
