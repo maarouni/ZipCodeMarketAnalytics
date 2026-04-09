@@ -121,8 +121,10 @@ with col1:
     down_payment_pct_a = st.slider("Down Payment A (%)", 0.0, 100.0, 20.0, 1.0, key="dpa")
 
     if zori_a:
-        st.markdown(f"**Monthly Rent A** — Zillow estimate: ${zori_a:,}/mo")
-        rent_a = st.slider("Adjust rent A", int(zori_a*0.8), int(zori_a*1.2), zori_a, 50, key="renta")
+        zori_a_adj = int(zori_a * 1.3)
+        st.markdown(f"**Monthly Rent A** — ZORI: ${zori_a:,} × 1.3 = ${zori_a_adj:,}/mo adjusted")
+        st.caption("±30% from adjusted default — drag to your actual rent")
+        rent_a = st.slider("Adjust rent A", int(zori_a_adj*0.7), int(zori_a_adj*1.3), zori_a_adj, 50, key="renta")
     else:
         rent_a = st.number_input("Monthly Rent A ($)", value=2000, step=100, key="renta")
 
@@ -145,8 +147,10 @@ with col2:
     down_payment_pct_b = st.slider("Down Payment B (%)", 0.0, 100.0, 20.0, 1.0, key="dpb")
 
     if zori_b:
-        st.markdown(f"**Monthly Rent B** — Zillow estimate: ${zori_b:,}/mo")
-        rent_b = st.slider("Adjust rent B", int(zori_b*0.8), int(zori_b*1.2), zori_b, 50, key="rentb")
+        zori_b_adj = int(zori_b * 1.3)
+        st.markdown(f"**Monthly Rent B** — ZORI: ${zori_b:,} × 1.3 = ${zori_b_adj:,}/mo adjusted")
+        st.caption("±30% from adjusted default — drag to your actual rent")
+        rent_b = st.slider("Adjust rent B", int(zori_b_adj*0.7), int(zori_b_adj*1.3), zori_b_adj, 50, key="rentb")
     else:
         rent_b = st.number_input("Monthly Rent B ($)", value=2100, step=100, key="rentb")
 

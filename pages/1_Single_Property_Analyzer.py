@@ -98,11 +98,12 @@ if zhvi_price and purchase_price != zhvi_price:
     st.sidebar.caption(f"This price is **{abs(diff_pct):.1f}% {direction}** the {mkt_city} median of ${zhvi_price:,}")
 
 if zori_rent:
-    rent_min = int(zori_rent * 0.70)
-    rent_max = int(zori_rent * 1.30)
+    zori_adjusted = int(zori_rent * 1.3)
+    rent_min = int(zori_adjusted * 0.70)
+    rent_max = int(zori_adjusted * 1.30)
     st.sidebar.markdown("**Monthly Rent ($)**")
-    st.sidebar.caption(f"Zillow ZORI estimate: ${zori_rent:,}/mo — adjust ±30% for your property")
-    monthly_rent = st.sidebar.slider("Drag to adjust rent", min_value=rent_min, max_value=rent_max, value=zori_rent, step=50)
+    st.sidebar.caption(f"Zillow ZORI: ${zori_rent:,}/mo × 1.3 = ${zori_adjusted:,}/mo (Bay Area adjusted) — ±30% from adjusted default")
+    monthly_rent = st.sidebar.slider("Drag to adjust rent", min_value=rent_min, max_value=rent_max, value=zori_adjusted, step=50)
 else:
     monthly_rent = st.sidebar.number_input("Expected Monthly Rent ($)", min_value=0, value=2000, step=100)
 
