@@ -395,12 +395,12 @@ def generate_pdf(
 
     year_x = year_x or fallback_year_x  # reuse the year_x you computed above if present
 
-    monthly_cash_flow = metrics.get("First Year Cash Flow ($)", None)
+    annual_cash_flow = metrics.get("First Year Cash Flow ($)", None)
     final_year_roi = metrics.get("Final Year ROI (%)", None)
     coc = metrics.get("Cash-on-Cash Return (%)", None)
 
     curated = [
-        ("Monthly Cash Flow ($)", fmt_money(monthly_cash_flow)),  # ✅ $ label
+        ("Annual Cash Flow ($)", fmt_money(annual_cash_flow)),  # ✅ annual
         (f"Expected Return (%) — by Year {year_x}" if year_x else "Expected Return (%)",
          fmt_pct(final_year_roi)),  # ✅ % label + Year X
         ("Monthly Cost vs Monthly Rent (%)", fmt_pct(coc)),  # ✅ % label (even if name is imperfect)
