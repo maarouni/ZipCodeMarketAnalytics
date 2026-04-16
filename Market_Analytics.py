@@ -72,13 +72,18 @@ def load_full_zillow():
         with open(CACHE_FILE, "wb") as f:
             for chunk in r.iter_content(chunk_size=8192):
                 f.write(chunk)
-    return pd.read_csv(CACHE_FILE, dtype={"RegionName": str})
+    # Load only columns the app actually uses — drops RegionID, SizeRank,
+    # RegionType, StateName, Metro, CountyName which are never referenced.
+    # Keeps full date history (1996-present) so all sliders work unchanged.
+    df = pd.read_csv(CACHE_FILE, dtype={"RegionName": str})
+    date_cols = [c for c in df.columns if c.startswith("20") or c.startswith("199")]
+    return df[["RegionName", "City", "State"] + date_cols]
 
 def get_zip_data(df, zipcode):
     row = df[df["RegionName"] == zipcode]
     if row.empty:
         return None, None, None
-    date_cols = [c for c in df.columns if c.startswith("20")]
+    date_cols = [c for c in df.columns if c.startswith("20") or c.startswith("199")]
     series = pd.Series(row.iloc[0][date_cols].values.astype(float), index=pd.to_datetime(date_cols))
     return series, row.iloc[0].get("City", "Unknown"), row.iloc[0].get("State", "")
 
@@ -217,4 +222,4 @@ with st.expander("📋 View Raw Monthly Data"):
     st.dataframe(pd.DataFrame({"Date": filtered.index.strftime("%Y-%m"),
         "Median Home Value ($)": filtered.values.round(0).astype(int)}), use_container_width=True)
 
-st.caption(f"Built with Streamlit + Zillow Research | RealEstate-Analytics.ai | {city}, {state} {zip_input} | v0.2")
+st.caption(f"Built with Streamlit + Zillow Research | RealEstate-Analytics.ai | {city}, {state} {zip_input} | v0.3")
